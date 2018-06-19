@@ -8,9 +8,26 @@ module Nancy
     end
 
     attr_reader :routes
+    attr_reader :request
 
     def get(path, &handler)
       route("GET", path, &handler)
+    end
+
+    def post(path, &handler)
+      route("POST", path, &handler)
+    end
+
+    def put(path, &handler)
+      route("PUT", path, &handler)
+    end
+
+    def patch(path, &handler)
+      route("PATCH", path, &handler)
+    end
+
+    def delete(path, &handler)
+      route("DELETE", path, &handler)
     end
 
     def call(env)
@@ -45,6 +62,10 @@ nancy = Nancy::Base.new
 
 nancy.get "/hello" do
   [200, {}, ["Nancy says hello"]]
+end
+
+nancy.post "/" do
+  [200, {}, request.body]
 end
 
 Rack::Handler::WEBrick.run nancy, Port: 9292
