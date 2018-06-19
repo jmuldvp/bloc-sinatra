@@ -13,6 +13,16 @@ module Nancy
       route("GET", path, &handler)
     end
 
+    def call(env)
+      @request = Rack::Request.new(env)
+      verb = @request.request_method
+      requested_path = @request.path_info
+
+      handler = @routes[verb][requested_path]
+
+      handler.call
+    end
+
     private
 
     def route(verb, path, &handler)
@@ -27,5 +37,7 @@ nancy = Nancy::Base.new
 nancy.get "/hello" do
   [200, {}, ["Nancy says hello"]]
 end
+
+Rack::Handler::WEBrick.run nancy, Port: 9292
 
 puts nancy.routes
