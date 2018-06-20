@@ -1,4 +1,3 @@
-# nancy.rb
 require "rack"
 
 module Nancy
@@ -8,7 +7,6 @@ module Nancy
     end
 
     attr_reader :routes
-    attr_reader :request
 
     def get(path, &handler)
       route("GET", path, &handler)
@@ -30,8 +28,8 @@ module Nancy
       route("DELETE", path, &handler)
     end
 
-    def params
-      request.params
+    def head(path, &handler)
+      route("HEAD", path, &handler)
     end
 
     def call(env)
@@ -42,8 +40,6 @@ module Nancy
       handler = @routes.fetch(verb, {}).fetch(requested_path, nil)
 
       if handler
-        # handler.call
-        # instance_eval(&handler)
         result = instance_eval(&handler)
         if result.class == String
           [200, {}, [result]]
@@ -54,6 +50,8 @@ module Nancy
         [404, {}, ["Oops! No route for #{verb} #{requested_path}"]]
       end
     end
+
+    attr_reader :request
 
     private
 
@@ -66,19 +64,22 @@ module Nancy
       @request.params
     end
   end
+
+  Application = Base.new
+
+  module Delegator
+    def self.delegate(*methods, to:)
+      Array(methods).each do |method_name|
+        define_method(method_name) do |*args, &block|
+          to.send(method_name, *args, &block)
+        end
+
+        private method_name
+      end
+    end
+
+    delegate :get, :patch, :put, :post, :delete, :head, to: Application
+  end
 end
 
-nancy = Nancy::Base.new
-
-nancy.get "/hello" do
-  # [200, {}, ["Nancy says hello"]]
-  "Nancy says hello!"
-end
-
-nancy.post "/" do
-  [200, {}, request.body]
-end
-
-Rack::Handler::WEBrick.run nancy, Port: 9292
-
-puts nancy.routes
+include Nancy::Delegator
