@@ -30,6 +30,10 @@ module Nancy
       route("DELETE", path, &handler)
     end
 
+    def params
+      request.params
+    end
+
     def call(env)
       @request = Rack::Request.new(env)
       verb = @request.request_method
@@ -39,7 +43,13 @@ module Nancy
 
       if handler
         # handler.call
-        instance_eval(&handler)
+        # instance_eval(&handler)
+        result = instance_eval(&handler)
+        if result.class == String
+          [200, {}, [result]]
+        else
+          result
+        end
       else
         [404, {}, ["Oops! No route for #{verb} #{requested_path}"]]
       end
@@ -61,7 +71,8 @@ end
 nancy = Nancy::Base.new
 
 nancy.get "/hello" do
-  [200, {}, ["Nancy says hello"]]
+  # [200, {}, ["Nancy says hello"]]
+  "Nancy says hello!"
 end
 
 nancy.post "/" do
